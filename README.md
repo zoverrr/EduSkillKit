@@ -12,24 +12,39 @@
 - **技能创建**：四步式引导，教师可将教学经验封装为可复用的 AI 技能模板
 - **对话管理**：历史对话保存、加载、删除
 
+## 环境要求
+
+- Python >= 3.10
+- Node.js >= 18（用于构建前端）
+
 ## 快速开始
 
-### 方式一：命令行启动（推荐）
-
 ```bash
-# 1. 安装依赖
+# 1. 克隆项目
+git clone https://github.com/zoverrr/EduSkillKit.git
+cd EduSkillKit
+
+# 2. 安装 Python 依赖
 pip install -e .
 
-# 2. 配置 API Key
-cp .env.example .env
-# 编辑 .env 填入你的 API Key
+# 3. 构建前端
+cd frontend
+npm install
+npm run build
+cd ..
 
-# 3. 启动
+# 4. 配置 API Key
+cp .env.example .env
+# 编辑 .env，填入至少一家模型的 API Key
+
+# 5. 启动
 eduskilk
 # 浏览器自动打开 http://127.0.0.1:8000
 ```
 
-### 方式二：开发模式
+### 开发模式
+
+前后端分离启动，支持热更新：
 
 ```bash
 # 后端
