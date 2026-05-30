@@ -54,6 +54,7 @@ export default function SkillChat() {
 
   const [inputText, setInputText] = useState('')
   const [uploadFileName, setUploadFileName] = useState('')
+  const [providerKey, setProviderKey] = useState('')
   const [providerName, setProviderName] = useState('')
   const [modelName, setModelName] = useState('')
   const [browseSearch, setBrowseSearch] = useState('')
@@ -62,6 +63,7 @@ export default function SkillChat() {
   useEffect(() => {
     fetchSkills().then(setSkills).catch(() => {})
     fetchSettings().then((s) => {
+      setProviderKey(s.provider)
       setProviderName(s.providers?.[s.provider]?.name || s.provider)
       setModelName(s.model)
     }).catch(() => {})
@@ -192,7 +194,7 @@ export default function SkillChat() {
 
     try {
       addMessage({ role: 'assistant', content: '' })
-      const gen = streamChat(currentSkill.name, skillParams, fullMsg, providerName, modelName)
+      const gen = streamChat(currentSkill.name, skillParams, fullMsg, providerKey, modelName)
       for await (const chunk of gen) {
         fullResponse += chunk
         setMessages([
@@ -233,7 +235,7 @@ export default function SkillChat() {
     }
   }, [
     currentSkill, isStreaming, inputText, uploadedFileText, skillParams,
-    messages, currentConvId, modelName, providerName,
+    messages, currentConvId, modelName, providerKey, providerName,
     addMessage, setMessages, setIsStreaming, setCurrentConvId,
   ])
 
