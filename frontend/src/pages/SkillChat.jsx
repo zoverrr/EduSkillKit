@@ -164,7 +164,20 @@ export default function SkillChat() {
     const userMsg = inputText.trim()
     setInputText('')
 
-    let displayText = userMsg || '📎 已上传文件'
+    // 构建显示文本：优先用用户输入，其次用参数摘要，最后用默认文本
+    let displayText = userMsg
+    if (!displayText) {
+      const paramSummary = Object.entries(skillParams)
+        .filter(([_, v]) => v)
+        .map(([k, v]) => {
+          const param = currentSkill.parameters.find(p => p.name === k)
+          return param ? `${param.display_name}: ${v}` : null
+        })
+        .filter(Boolean)
+        .slice(0, 3)
+        .join('、')
+      displayText = paramSummary ? `📋 ${paramSummary}` : (uploadedFileText ? '📎 已上传文件' : '⚡ 执行技能')
+    }
     addMessage({ role: 'user', content: displayText })
 
     let fullMsg = userMsg
@@ -179,7 +192,7 @@ export default function SkillChat() {
 
     try {
       addMessage({ role: 'assistant', content: '' })
-      const gen = streamChat(currentSkill.name, skillParams, fullMsg)
+      const gen = streamChat(currentSkill.name, skillParams, fullMsg, providerName, modelName)
       for await (const chunk of gen) {
         fullResponse += chunk
         setMessages([
@@ -433,7 +446,7 @@ export default function SkillChat() {
                   <Sparkles className="w-7 h-7 text-primary-400" />
                 </div>
                 <p className="text-sm font-medium mb-1">填写参数，开始对话</p>
-                <p className="text-xs text-slate-400">在右侧填写必要参数后，点击「执行」或直接输入补充说明</p>
+                <p className="text-xs text-slate-400">在右侧填写必要参数后，点击右下角「执行」按钮</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -454,9 +467,14 @@ export default function SkillChat() {
                     >
                       {msg.role === 'user' ? (
                         <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                      ) : (
+                      ) : msg.content ? (
                         <MarkdownRenderer content={msg.content} />
-                      )}
+                      ) : isStreaming && i === messages.length - 1 ? (
+                        <div className="flex items-center gap-2 text-slate-500">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span className="text-sm">生成中...</span>
+                        </div>
+                      ) : null}
                     </div>
                   </motion.div>
                 ))}
@@ -491,11 +509,15 @@ export default function SkillChat() {
               />
               <button
                 onClick={handleSend}
-                disabled={isStreaming || (!inputText.trim() && !uploadedFileText)}
-                className="w-10 h-10 rounded-lg bg-primary-600 text-white flex items-center justify-center
+                disabled={isStreaming || missingRequired.length > 0}
+                className="flex items-center gap-1.5 px-4 h-10 rounded-lg bg-primary-600 text-white text-sm font-medium
                            hover:bg-primary-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex-shrink-0"
               >
-                {isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                {isStreaming ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> 生成中</>
+                ) : (
+                  <><Sparkles className="w-4 h-4" /> 执行</>
+                )}
               </button>
             </div>
           </div>
@@ -562,18 +584,6 @@ export default function SkillChat() {
                 </p>
               </div>
             )}
-
-            <button
-              onClick={handleSend}
-              disabled={isStreaming || missingRequired.length > 0 || (!inputText.trim() && !uploadedFileText)}
-              className="btn-primary w-full mt-5"
-            >
-              {isStreaming ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> 生成中...</>
-              ) : (
-                <><Sparkles className="w-4 h-4" /> 执行</>
-              )}
-            </button>
           </div>
         </div>
       </div>
